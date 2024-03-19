@@ -5,8 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AEMOS_IdentityA.Models;
-using AEMOS_IdentityA.DTO;
+using AEMOSAPI.Models;
+using AEMOSAPI.DTO;
 
 namespace AEMOS_IdentityA.Controllers
 {
@@ -21,41 +21,24 @@ namespace AEMOS_IdentityA.Controllers
             _context = new AemosCoreContext();
         }
 
-        // GET: api/Devices
-        [HttpGet]
-        public async Task<IActionResult> GetDevices()
+        [HttpPut]
+        [Route("TriggerState/{id}")]
+        public async Task<IActionResult> TriggerState(long id, Device d)
         {
-           //   IList<Device> devicelist= await _context.Devices.Select(dev=> new Device() { Id=dev.Id,Name= dev.Name, Uuid= dev.Uuid}).ToListAsync();
-           var deviceList = await _context.Devices.Select(dev => new{ dev.Id, dev.Name, dev.Uuid, dev.UpdatedAt, dev.Status }).ToListAsync();
-            return Ok(deviceList);
-        }
-
-        //GET: api/Devices/5
-        [HttpGet]
-        [Route("GetDevice/{id}")]
-        public async Task<ActionResult<Device>> GetDevice(long id)
-        {
-            var device = await _context.Devices.FindAsync(id);//.(dev => new { dev.Id, dev.Name });
-                if (device == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(new {device.Id, device.Name, device.Uuid, device.UpdatedAt,device.Description});
-        }
-
-        // PUT: api/Devices/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutDevice(long id, Device device)
-        {
-            if (id != device.Id)
+            var _deviceInstance = await _context.Devices.FindAsync(id);
+            if (id != d.Id)
             {
                 return BadRequest();
             }
-
-            _context.Entry(device).State = EntityState.Modified;
-
+            if (_deviceInstance != null)
+            {
+                _deviceInstance.State = d.State;
+                _context.Entry(_deviceInstance).State = EntityState.Modified;
+            }
+            else
+            {
+                return BadRequest();
+            }
             try
             {
                 await _context.SaveChangesAsync();
@@ -75,15 +58,93 @@ namespace AEMOS_IdentityA.Controllers
             return NoContent();
         }
 
-        // POST: api/Devices
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost("CreateDevice")]
-        public async Task<ActionResult<Device>> CreateDevice(Device device)
+        //GET: api/Devices
+        [HttpGet]
+        public async Task<IActionResult> GetDevices()
         {
-            device.Uuid = new Guid();
-            _context.Devices.Add(device);
-            await _context.SaveChangesAsync();
+            List<Device> _tem = _context.Devices.ToList();
+            List<DeviceDTO> _deviceList = await (from d in _context.Devices
+                                                 join _areaDev in _context.AreaDevices on d.Id equals _areaDev.DeviceId
+                                                 join _area in _context.Areas on _areaDev.AreaId equals _area.Id
+                                                 where d.Status == true
+                                                 select
+                                                 new DeviceDTO() { Id = d.Id, Name = d.Name, State=d.State, Area = _area.Name, uuid = d.Uuid }).ToListAsync();
+            // IList<Device> devicelist = await _context.Devices.Select(dev => new Device() { Id = dev.Id, Name = dev.Name, Uuid = dev.Uuid }).ToListAsync();
+            return Ok(_deviceList);
+        }
 
+       // GET: api/Devices/5
+        [HttpGet]
+        [Route("GetDevice/{id}")]
+        public async Task<ActionResult<Device>> GetDevice(long id)
+        {
+            var device = await _context.Devices.FindAsync(id);//.(dev => new { dev.Id, dev.Name });
+            if (device == null)
+            {
+                return NotFound();
+            }
+
+            return Ok(new { device.Id, device.Name, device.Uuid, device.UpdatedAt, device.Description });
+        }
+
+       // PUT: api/Devices/5
+       //  To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPut("{id}")]
+        public async Task<IActionResult> PutDevice(long id, Device device)
+        {
+            if (id != device.Id)
+            {
+                return BadRequest();
+            }
+
+            var _deviceInstance = _context.Devices.Find(id);
+            if (_deviceInstance != null)
+            {
+                _deviceInstance.Name = device.Name;
+                _context.Entry(_deviceInstance).State = EntityState.Modified;
+            }
+            else
+            {
+                return BadRequest();
+            }
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DeviceExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+        }
+
+        //POST: api/Devices
+        //To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPost("CreateDevice")]
+        public async Task<ActionResult<Device>> CreateDevice(DeviceDTO device)
+        {
+            device.uuid = Guid.NewGuid();
+            Device _deviceInst = new Device();
+            _deviceInst.Uuid = device.uuid;
+            _deviceInst.Name = device.Name;
+            _deviceInst.Description = device.Description;
+            _deviceInst.Status = true;
+            _deviceInst.State = "off";
+            // _deviceInst.CreatedAt = DateTime.UtcNow.short;
+            _context.Devices.Add(_deviceInst);
+            _context.SaveChanges();
+            _deviceInst = _context.Devices.Where(dev => dev.Uuid == device.uuid).SingleOrDefault();
+            _deviceInst.AreaDevices.Add(new AreaDevice() { AreaId = device.AreaId, DeviceId = device.Id });
+            _context.Entry(_deviceInst).State = EntityState.Modified;
+            await _context.SaveChangesAsync();
             return CreatedAtAction("GetDevice", new { id = device.Id }, device);
         }
 
@@ -98,7 +159,7 @@ namespace AEMOS_IdentityA.Controllers
                     TelemetryDatum? _telemetryDataum = (_device.TelemetryData.Where(td => td.DeviceId == _device.Id)).SingleOrDefault();
                     if (_telemetryDataum != null)
                     {
-                        DataStream _dataStream = new DataStream() { Value = dev.value, TelemetryDataId=_telemetryDataum.Id  };
+                        DataStream _dataStream = new DataStream() { Value = dev.value, TelemetryDataId = _telemetryDataum.Id };
                         _context.Add(_dataStream);
                         await _context.SaveChangesAsync();
                         return CreatedAtAction("DeviceTelemetry", dev);
@@ -136,7 +197,7 @@ namespace AEMOS_IdentityA.Controllers
                 }
                 return StatusCode(StatusCodes.Status404NotFound, "Probably no device exist");
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 return StatusCode(StatusCodes.Status500InternalServerError, "Failed to get telemetry data");
             }
@@ -150,8 +211,8 @@ namespace AEMOS_IdentityA.Controllers
             {
                 return NotFound();
             }
-
-            _context.Devices.Remove(device);
+            device.Status = false;
+            _context.Entry(device).State = EntityState.Modified;
             await _context.SaveChangesAsync();
 
             return NoContent();

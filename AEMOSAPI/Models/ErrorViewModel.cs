@@ -1,4 +1,4 @@
-﻿namespace AEMOS_IdentityA.Models
+﻿namespace AEMOSAPI.Models
 {
     public class ErrorViewModel
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
-namespace AEMOS_IdentityA.Models;
+namespace AEMOSAPI.Models;
 
 public partial class AemosCoreContext : DbContext
 {
@@ -13,8 +13,8 @@ public partial class AemosCoreContext : DbContext
     public AemosCoreContext(DbContextOptions<AemosCoreContext> options)
         : base(options)
     {
-
     }
+
     public virtual DbSet<Area> Areas { get; set; }
 
     public virtual DbSet<AreaDevice> AreaDevices { get; set; }
@@ -27,17 +27,11 @@ public partial class AemosCoreContext : DbContext
 
     public virtual DbSet<Organization> Organizations { get; set; }
 
-    public virtual DbSet<State> States { get; set; }
-
     public virtual DbSet<TelemetryDatum> TelemetryData { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    // #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-    {
-        optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Initial Catalog=aemos_core;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False");
-        optionsBuilder.UseLazyLoadingProxies().UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Initial Catalog=aemos_core;Integrated Security=True;Connect Timeout=30;Encrypt=False;Trust Server Certificate=False;Application Intent=ReadWrite;Multi Subnet Failover=False");
-    }
-
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=aemos_core;Trusted_Connection=True;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -46,6 +40,7 @@ public partial class AemosCoreContext : DbContext
             entity.ToTable("Area");
 
             entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Description).HasColumnType("text");
             entity.Property(e => e.Image)
                 .IsUnicode(false)
                 .HasColumnName("image");
@@ -102,6 +97,7 @@ public partial class AemosCoreContext : DbContext
             entity.Property(e => e.TelemetryDataId).HasColumnName("telemetryDataId");
             entity.Property(e => e.Value)
                 .HasMaxLength(50)
+                .IsUnicode(false)
                 .HasColumnName("value");
 
             entity.HasOne(d => d.TelemetryData).WithMany(p => p.DataStreams)
@@ -124,6 +120,9 @@ public partial class AemosCoreContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("name");
+            entity.Property(e => e.State)
+                .HasColumnType("text")
+                .HasColumnName("state");
             entity.Property(e => e.Status).HasColumnName("status");
             entity.Property(e => e.UpdatedAt)
                 .HasColumnType("datetime")
@@ -157,6 +156,7 @@ public partial class AemosCoreContext : DbContext
                 .HasColumnName("address");
             entity.Property(e => e.ContactNumber)
                 .HasMaxLength(50)
+                .IsUnicode(false)
                 .HasColumnName("contactNumber");
             entity.Property(e => e.CreatedAt)
                 .HasColumnType("datetime")
@@ -189,23 +189,6 @@ public partial class AemosCoreContext : DbContext
                 .HasColumnName("zip");
         });
 
-        modelBuilder.Entity<State>(entity =>
-        {
-            entity.ToTable("State");
-
-            entity.Property(e => e.Id).HasColumnName("id");
-            entity.Property(e => e.DeviceId).HasColumnName("deviceId");
-            entity.Property(e => e.IsActive).HasColumnName("isActive");
-            entity.Property(e => e.Name)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("name");
-
-            entity.HasOne(d => d.Device).WithMany(p => p.States)
-                .HasForeignKey(d => d.DeviceId)
-                .HasConstraintName("FK_State_Device");
-        });
-
         modelBuilder.Entity<TelemetryDatum>(entity =>
         {
             entity.Property(e => e.Id).HasColumnName("id");
@@ -213,6 +196,7 @@ public partial class AemosCoreContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("datatype");
+            entity.Property(e => e.DateTime).HasColumnType("datetime");
             entity.Property(e => e.DeviceId).HasColumnName("deviceId");
             entity.Property(e => e.VariableName)
                 .HasMaxLength(50)

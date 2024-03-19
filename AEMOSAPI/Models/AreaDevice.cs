@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AEMOS_IdentityA.Models;
+namespace AEMOSAPI.Models;
 
 public partial class AreaDevice
 {

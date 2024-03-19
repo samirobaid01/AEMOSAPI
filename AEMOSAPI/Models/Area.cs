@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AEMOS_IdentityA.Models;
+namespace AEMOSAPI.Models;
 
 public partial class Area
 {
@@ -16,6 +16,8 @@ public partial class Area
     public string? Image { get; set; }
 
     public Guid? Uuid { get; set; }
+
+    public string? Description { get; set; }
 
     public virtual ICollection<AreaDevice> AreaDevices { get; set; } = new List<AreaDevice>();
 

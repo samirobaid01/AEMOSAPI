@@ -1,6 +1,5 @@
 ﻿using AEMOS_IdentityA.Authentication;
-using AEMOS_IdentityA.Data;
-using AEMOS_IdentityA.DTO;
+using AEMOSAPI.DTO;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AEMOS_IdentityA.Models;
+namespace AEMOSAPI.Models;
 
 public partial class Device
 {
@@ -19,9 +19,9 @@ public partial class Device
 
     public DateTime? UpdatedAt { get; set; }
 
-    public virtual ICollection<AreaDevice> AreaDevices { get; set; } = new List<AreaDevice>();
+    public string? State { get; set; }
 
-    public virtual ICollection<State> States { get; set; } = new List<State>();
+    public virtual ICollection<AreaDevice> AreaDevices { get; set; } = new List<AreaDevice>();
 
     public virtual ICollection<TelemetryDatum> TelemetryData { get; set; } = new List<TelemetryDatum>();
 }

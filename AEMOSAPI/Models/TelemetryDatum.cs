@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace AEMOS_IdentityA.Models;
+namespace AEMOSAPI.Models;
 
 public partial class TelemetryDatum
 {
@@ -12,6 +12,8 @@ public partial class TelemetryDatum
     public string? Datatype { get; set; }
 
     public long? DeviceId { get; set; }
+
+    public DateTime? DateTime { get; set; }
 
     public virtual ICollection<DataStream> DataStreams { get; set; } = new List<DataStream>();
 
