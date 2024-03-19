@@ -1,4 +1,4 @@
-﻿namespace AEMOS_IdentityA.DTO
+﻿namespace AEMOSAPI.DTO
 {
     public class Response
     {

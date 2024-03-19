@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AEMOS_IdentityA.Models;
+using AEMOSAPI.DTO;
+using AEMOSAPI.Models;
 
 namespace AEMOS_IdentityA.Controllers
 {
@@ -24,8 +25,27 @@ namespace AEMOS_IdentityA.Controllers
         [HttpGet]
         public async Task<ActionResult> GetOrganization()
         {
-            var _organization = await _context.Organizations.Select(org => new { org.Id, org.ParentId, org.Name, org.Zip, org.Detail}).ToListAsync();
+            var _organization = await _context.Organizations.Select(org => new { org.Id, org.ParentId, org.Name, org.Zip, org.Detail, org.Address, org.IsParent, org.Email, org.ContactNumber}).ToListAsync();
             return Ok(_organization);
+        }
+
+        //GET : api/Organizations/GetParentOrgs
+        [HttpGet]
+        [Route("GetParentOrgs")]
+        public async Task<ActionResult<OrganizationDTO>> GetParentOrganization()
+        {
+            List<OrganizationDTO> orgList = await _context.Organizations.Where(org => org.IsParent == true).Select(org => new OrganizationDTO() { Id=org.Id, IsParent=org.IsParent, Name=org.Name }).ToListAsync();
+
+            return Ok(orgList);
+        }
+
+        [HttpGet]
+        [Route("GetChildOrgs")]
+        public async Task<ActionResult<OrganizationDTO>> GetChildOrganization(long parentId)
+        {
+            List<OrganizationDTO> orgList = await _context.Organizations.Where(org => org.ParentId == parentId).Select(org => new OrganizationDTO() { Id = org.Id, IsParent = org.IsParent, Name = org.Name }).ToListAsync();
+
+            return Ok(orgList);
         }
 
         // GET: api/Organizations/5

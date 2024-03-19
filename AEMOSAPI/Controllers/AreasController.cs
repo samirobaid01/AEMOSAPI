@@ -5,7 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using AEMOS_IdentityA.Models;
+using AEMOSAPI.Models;
+using AEMOSAPI.DTO;
 
 namespace AEMOS_IdentityA.Controllers
 {
@@ -24,22 +25,27 @@ namespace AEMOS_IdentityA.Controllers
         [HttpGet]
         public async Task<ActionResult> GetAreas()
         {
-            var area= await _context.Areas.Select(area => new { area.Id, area.Name, area.Uuid, area.OrganizationId}).ToListAsync();
-            return Ok(area);
+            List<AreaDTO> _area = await (from ar in _context.Areas
+                                    join org in _context.Organizations on ar.OrganizationId equals org.Id
+                                    select new AreaDTO() { Id = ar.Id,Name=ar.Name, OrgName = org.Name, description = ar.Description }).ToListAsync();
+            return Ok(_area);
         }
 
         // GET: api/Areas/5
         [HttpGet("{id}")]
         public async Task<ActionResult> GetArea(long id)
         {
-            var area = await _context.Areas.FindAsync(id);
+            AreaDTO? _area = await (from ar in _context.Areas
+                         join org in _context.Organizations on ar.OrganizationId equals org.Id where ar.Id == id
+                         select new AreaDTO() { Id=ar.Id, OrgName=org.Name, description=ar.Description }).FirstOrDefaultAsync();
+                        
 
-            if (area == null)
+            if (_area == null)
             {
                 return NotFound();
             }
 
-            return Ok(new { area.Id, area.Name, area.Uuid, area.OrganizationId});
+            return Ok(_area);
         }
 
         // PUT: api/Areas/5
