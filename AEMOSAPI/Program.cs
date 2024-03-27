@@ -69,11 +69,12 @@ app.UseStaticFiles();
 
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
+//    builder.WebHost.UseUrls("http://192.168.18.16:5000"); // Change 5000 to your desired port
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseRouting();
 app.UseCors("AllowCors");

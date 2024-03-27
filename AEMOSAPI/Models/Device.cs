@@ -21,6 +21,8 @@ public partial class Device
 
     public string? State { get; set; }
 
+    public string? Type { set; get; }
+
     public virtual ICollection<AreaDevice> AreaDevices { get; set; } = new List<AreaDevice>();
 
     public virtual ICollection<TelemetryDatum> TelemetryData { get; set; } = new List<TelemetryDatum>();

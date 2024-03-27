@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Configuration;
 using Microsoft.EntityFrameworkCore;
 
 namespace AEMOSAPI.Models;
@@ -8,6 +9,7 @@ public partial class AemosCoreContext : DbContext
 {
     public AemosCoreContext()
     {
+        string conn = "Data Source=FAC-042;Initial Catalog=aemos;User ID=aemos_admin;Password=12345;Trusted_Connection=false;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False";
     }
 
     public AemosCoreContext(DbContextOptions<AemosCoreContext> options)
@@ -30,8 +32,9 @@ public partial class AemosCoreContext : DbContext
     public virtual DbSet<TelemetryDatum> TelemetryData { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=aemos_core;Trusted_Connection=True;");
+// To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Data Source=FAC-042;Initial Catalog=aemos;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False"); 
+    //"Server=(localdb)\\MSSQLLocalDB;Database=aemos_core;Trusted_Connection=True;"
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

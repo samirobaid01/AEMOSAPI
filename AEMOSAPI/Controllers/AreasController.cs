@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using AEMOSAPI.Models;
 using AEMOSAPI.DTO;
 
-namespace AEMOS_IdentityA.Controllers
+namespace AEMOSAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -58,7 +58,9 @@ namespace AEMOS_IdentityA.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(area).State = EntityState.Modified;
+            Area _areaInst = _context.Areas.Find(id);
+            _areaInst.Name = area.Name;
+            _context.Entry(_areaInst).State = EntityState.Modified;
 
             try
             {

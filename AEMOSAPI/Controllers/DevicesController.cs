@@ -8,13 +8,13 @@ using Microsoft.EntityFrameworkCore;
 using AEMOSAPI.Models;
 using AEMOSAPI.DTO;
 
-namespace AEMOS_IdentityA.Controllers
+namespace AEMOSAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class DevicesController : ControllerBase
     {
-        private readonly AemosCoreContext _context;
+        private AemosCoreContext _context;
 
         public DevicesController()
         {
@@ -62,18 +62,49 @@ namespace AEMOS_IdentityA.Controllers
         [HttpGet]
         public async Task<IActionResult> GetDevices()
         {
-            List<Device> _tem = _context.Devices.ToList();
-            List<DeviceDTO> _deviceList = await (from d in _context.Devices
-                                                 join _areaDev in _context.AreaDevices on d.Id equals _areaDev.DeviceId
-                                                 join _area in _context.Areas on _areaDev.AreaId equals _area.Id
-                                                 where d.Status == true
-                                                 select
-                                                 new DeviceDTO() { Id = d.Id, Name = d.Name, State=d.State, Area = _area.Name, uuid = d.Uuid }).ToListAsync();
-            // IList<Device> devicelist = await _context.Devices.Select(dev => new Device() { Id = dev.Id, Name = dev.Name, Uuid = dev.Uuid }).ToListAsync();
-            return Ok(_deviceList);
+            try
+            {
+                _context = new AemosCoreContext();
+                List<Device> _tem = _context.Devices.ToList();
+                List<DeviceDTO> _deviceList = await (from d in _context.Devices
+                                                     join _areaDev in _context.AreaDevices on d.Id equals _areaDev.DeviceId
+                                                     join _area in _context.Areas on _areaDev.AreaId equals _area.Id
+                                                     where d.Status == true  & d.Type.ToString() == "Device"
+                                                     select
+                                                     new DeviceDTO() { Id = d.Id, Name = d.Name, State = d.State, Area = _area.Name, uuid = d.Uuid }).ToListAsync();
+                // IList<Device> devicelist = await _context.Devices.Select(dev => new Device() { Id = dev.Id, Name = dev.Name, Uuid = dev.Uuid }).ToListAsync();
+                return Ok(_deviceList);
+            }
+            catch(Exception Ex)
+            {
+                return BadRequest(Ex.Message +Ex.StackTrace);
+            }
         }
 
-       // GET: api/Devices/5
+        //GET: api/Devices
+        [HttpGet]
+        [Route("GetSensors")]
+        public async Task<IActionResult> GetSensors()
+        {
+            try
+            {
+                _context = new AemosCoreContext();
+                List<Device> _tem = _context.Devices.ToList();
+                List<SensorDTO> _sensorList = await (from d in _context.Devices
+                                                     join _areaDev in _context.AreaDevices on d.Id equals _areaDev.DeviceId
+                                                     join _area in _context.Areas on _areaDev.AreaId equals _area.Id
+                                                     where d.Status == true & d.Type.ToString()=="Sensor" 
+                                                     select
+                                                     new SensorDTO() { Id = d.Id, Name = d.Name, Area = _area.Name, AreaId=_area.Id, uuid = d.Uuid }).ToListAsync();
+                return Ok(_sensorList);
+            }
+            catch (Exception Ex)
+            {
+                return BadRequest(Ex.Message + Ex.StackTrace);
+            }
+        }
+
+        // GET: api/Devices/5
         [HttpGet]
         [Route("GetDevice/{id}")]
         public async Task<ActionResult<Device>> GetDevice(long id)
@@ -84,7 +115,27 @@ namespace AEMOS_IdentityA.Controllers
                 return NotFound();
             }
 
-            return Ok(new { device.Id, device.Name, device.Uuid, device.UpdatedAt, device.Description });
+            return Ok(new { device.Id, device.Name, device.Uuid, device.UpdatedAt, device.Description, device.State });
+        }
+
+        [HttpGet]
+        [Route("GetDeviceState/{uuid}")]
+        public async Task<ActionResult<Device>> GetDeviceState(String uuid)
+        {
+            Guid _tempId = new Guid(uuid);
+            try
+            {
+                Device dev = await _context.Devices.Where(d => d.Uuid == _tempId).SingleOrDefaultAsync();
+                if (dev != null)
+                {
+                    return Ok(dev.State);
+                }
+                return BadRequest();
+            }
+            catch (Exception e)
+            {
+                return BadRequest(e.Message);
+            }
         }
 
        // PUT: api/Devices/5
@@ -126,6 +177,49 @@ namespace AEMOS_IdentityA.Controllers
             return NoContent();
         }
 
+        [HttpPut]
+        [Route("UpdateSensor/{id}")]
+        public async Task<IActionResult> UpdateSensor(long id, SensorDTO sensor)
+        {
+            if (id != sensor.Id)
+            {
+                return BadRequest();
+            }
+
+            var _deviceInstance = _context.Devices.Find(id);
+            if (_deviceInstance != null)
+            {
+
+                AreaDevice _areaDevInst = (from ad in _context.AreaDevices where ad.DeviceId == _deviceInstance.Id select ad).SingleOrDefault();
+                _context.AreaDevices.Remove(_areaDevInst);
+                _context.SaveChanges();
+                _deviceInstance.Name = sensor.Name;
+                _deviceInstance.AreaDevices.Add(new AreaDevice() { AreaId = sensor.AreaId, DeviceId = sensor.Id });
+                _context.Entry(_deviceInstance).State = EntityState.Modified;
+            }
+            else
+            {
+                return BadRequest();
+            }
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!DeviceExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+
+            return NoContent();
+
+        }
         //POST: api/Devices
         //To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost("CreateDevice")]
@@ -138,6 +232,7 @@ namespace AEMOS_IdentityA.Controllers
             _deviceInst.Description = device.Description;
             _deviceInst.Status = true;
             _deviceInst.State = "off";
+            _deviceInst.Type = "Device";
             // _deviceInst.CreatedAt = DateTime.UtcNow.short;
             _context.Devices.Add(_deviceInst);
             _context.SaveChanges();
@@ -148,6 +243,33 @@ namespace AEMOS_IdentityA.Controllers
             return CreatedAtAction("GetDevice", new { id = device.Id }, device);
         }
 
+        [HttpPost("CreateSensor")]
+        public async Task<ActionResult<Device>> CreateSensor(SensorDTO sensor)
+        {
+            try
+            {
+                Device _deviceInst = new Device();
+                _deviceInst.Uuid = Guid.NewGuid();
+                _deviceInst.Name = sensor.Name;
+                _deviceInst.Type = "Sensor";
+                _deviceInst.Description = sensor.Description;
+                _deviceInst.Status = true;
+                _deviceInst.TelemetryData = sensor.telemetryData;
+                _context.Devices.Add(_deviceInst);
+                _context.SaveChanges();
+                Device _device = _context.Devices.Where(d => d.Uuid == _deviceInst.Uuid).SingleOrDefault();
+                _deviceInst = _context.Devices.Where(dev => dev.Uuid == _deviceInst.Uuid).SingleOrDefault();
+                _deviceInst.AreaDevices.Add(new AreaDevice() { AreaId = sensor.AreaId, DeviceId = _deviceInst.Id });
+                _context.Entry(_deviceInst).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+            }
+            catch(Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            return CreatedAtAction("GetSensor",new SensorDTO());
+        }
+
         [HttpPost("DeviceTelemetry")]
         public async Task<ActionResult<TelemetryDatum>> DeviceTelemetry(DeviceTelemetry dev)
         {
@@ -156,7 +278,7 @@ namespace AEMOS_IdentityA.Controllers
                 Device? _device = (_context.Devices.Where(d => d.Uuid == dev.UUID)).SingleOrDefault();
                 if (_device != null)
                 {
-                    TelemetryDatum? _telemetryDataum = (_device.TelemetryData.Where(td => td.DeviceId == _device.Id)).SingleOrDefault();
+                    TelemetryDatum? _telemetryDataum = (_context.TelemetryData.Where(td => td.DeviceId == _device.Id & td.VariableName == dev.Name)).SingleOrDefault();
                     if (_telemetryDataum != null)
                     {
                         DataStream _dataStream = new DataStream() { Value = dev.value, TelemetryDataId = _telemetryDataum.Id };
