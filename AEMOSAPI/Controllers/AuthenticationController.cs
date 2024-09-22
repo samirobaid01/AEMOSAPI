@@ -8,7 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
-namespace AEMOS_IdentityA.Controllers
+namespace AEMOSAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

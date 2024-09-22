@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using AEMOSAPI.DTO;
 using AEMOSAPI.Models;
 
-namespace AEMOS_IdentityA.Controllers
+namespace AEMOSAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
